@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego del Ratón</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        #gameCanvas {
+            display: block;
+            background-color: #f0f0f0;
+            border: 2px solid #333;
+            margin: 0 auto;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const mouse = { x: 50, y: 200, width: 20, height: 20, color: 'brown' };
+            const obstacles = [];
+            const obstacleSpeed = 3;
+            const obstacleFrequency = 1500;
+            let score = 0;
+
+            function drawMouse() {
+                ctx.fillStyle = mouse.color;
+                ctx.fillRect(mouse.x, mouse.y, mouse.width, mouse.height);
+            }
+
+            function drawObstacles() {
+                obstacles.forEach(obstacle => {
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+                });
+            }
+
+            function updateObstacles() {
+                obstacles.forEach(obstacle => {
+                    obstacle.x -= obstacleSpeed;
+                });
+
+                // Remove obstacles that are off-screen
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    if (obstacles[i].x + obstacles[i].width < 0) {
+                        obstacles.splice(i, 1);
+                        score++;
+                        $('#score').text(`Score: ${score}`);
+                    }
+                }
+            }
+
+            function createObstacle() {
+                const height = Math.random() * 100 + 20;
+                const y = Math.random() > 0.5 ? 0 : canvas.height - height;
+                obstacles.push({ x: canvas.width, y: y, width: 20, height: height });
+            }
+
+            function checkCollision() {
+                for (const obstacle of obstacles) {
+                    if (
+                        mouse.x < obstacle.x + obstacle.width &&
+                        mouse.x + mouse.width > obstacle.x &&
+                        mouse.y < obstacle.y + obstacle.height &&
+                        mouse.y + mouse.height > obstacle.y
+                    ) {
+                        alert('Game Over! Your score: ' + score);
+                        document.location.reload();
+                    }
+                }
+            }
+
+            function gameLoop() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawMouse();
+                drawObstacles();
+                updateObstacles();
+                checkCollision();
+                requestAnimationFrame(gameLoop);
+            }
+
+            $(document).on('keydown', function (e) {
+                if (e.key === 'ArrowUp' && mouse.y > 0) {
+                    mouse.y -= 20;
+                } else if (e.key === 'ArrowDown' && mouse.y + mouse.height < canvas.height) {
+                    mouse.y += 20;
+                }
+            });
+
+            setInterval(createObstacle, obstacleFrequency);
+            gameLoop();
+        });
+    </script>
+</body>
+</html>
