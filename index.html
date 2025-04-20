@@ -81,53 +81,73 @@
             let difficulty = 1;
             let gameInterval;
             let isGameOver = false;
+            let danceInterval;
 
             function createObstacle() {
                 if (isGameOver) return;
 
-                const $obstacle = $('<div class="obstacle"></div>');
-                const randomX = Math.random() * ($gameArea.width() - 50);
-                $obstacle.css({ top: 0, left: randomX });
-                $gameArea.append($obstacle);
+                for (let i = 0; i < difficulty; i++) {
+                    const $obstacle = $('<div class="obstacle"></div>');
+                    const randomX = Math.random() * ($gameArea.width() - 50);
+                    $obstacle.css({ top: 0, left: randomX });
+                    $gameArea.append($obstacle);
 
-                const interval = setInterval(() => {
-                    if (isGameOver) {
-                        clearInterval(interval);
-                        $obstacle.remove();
-                        return;
-                    }
-
-                    const currentTop = parseInt($obstacle.css('top'));
-                    if (currentTop > $gameArea.height()) {
-                        $obstacle.remove();
-                        clearInterval(interval);
-                        score++;
-                        $score.text(`Score: ${score}`);
-                        if (score % 10 === 0) {
-                            difficulty++;
-                            speed += 2;
+                    const interval = setInterval(() => {
+                        if (isGameOver) {
+                            clearInterval(interval);
+                            $obstacle.remove();
+                            return;
                         }
-                    } else {
-                        $obstacle.css('top', currentTop + speed);
-                    }
 
-                    const mouseRect = $mouse[0].getBoundingClientRect();
-                    const obstacleRect = $obstacle[0].getBoundingClientRect();
-                    if (
-                        mouseRect.left < obstacleRect.right &&
-                        mouseRect.right > obstacleRect.left &&
-                        mouseRect.top < obstacleRect.bottom &&
-                        mouseRect.bottom > obstacleRect.top
-                    ) {
-                        endGame();
+                        const currentTop = parseInt($obstacle.css('top'));
+                        if (currentTop > $gameArea.height()) {
+                            $obstacle.remove();
+                            clearInterval(interval);
+                            score++;
+                            $score.text(`Score: ${score}`);
+                            if (score % 10 === 0) {
+                                difficulty++;
+                                speed += 2;
+                            }
+                        } else {
+                            $obstacle.css('top', currentTop + speed);
+                        }
+
+                        const mouseRect = $mouse[0].getBoundingClientRect();
+                        const obstacleRect = $obstacle[0].getBoundingClientRect();
+                        if (
+                            mouseRect.left < obstacleRect.right &&
+                            mouseRect.right > obstacleRect.left &&
+                            mouseRect.top < obstacleRect.bottom &&
+                            mouseRect.bottom > obstacleRect.top
+                        ) {
+                            endGame();
+                        }
+                    }, 30);
+                }
+            }
+
+            function startDancing() {
+                let direction = 1;
+                danceInterval = setInterval(() => {
+                    const currentLeft = parseInt($mouse.css('left'));
+                    const newLeft = currentLeft + (10 * direction);
+                    if (newLeft <= 0 || newLeft >= $gameArea.width() - 50) {
+                        direction *= -1;
                     }
-                }, 30);
+                    $mouse.css('left', newLeft);
+                }, 100);
+            }
+
+            function stopDancing() {
+                clearInterval(danceInterval);
             }
 
             function endGame() {
                 isGameOver = true;
                 clearInterval(gameInterval);
                 $gameOver.show();
+                startDancing();
             }
 
             function resetGame() {
@@ -138,11 +158,13 @@
                 $score.text(`Score: ${score}`);
                 $gameOver.hide();
                 $gameArea.find('.obstacle').remove();
+                stopDancing();
+                $mouse.css('left', '50%'); // Reinicia la posición del ratón
                 startGame();
             }
 
             function startGame() {
-                gameInterval = setInterval(createObstacle, 2000 / difficulty);
+                gameInterval = setInterval(createObstacle, 1000);
             }
 
             $(document).on('keydown', function (e) {
