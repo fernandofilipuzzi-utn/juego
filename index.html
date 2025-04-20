@@ -41,29 +41,62 @@
             font-size: 20px;
             color: #333;
         }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+        }
+        #gameOver h1 {
+            font-size: 36px;
+            color: #333;
+        }
+        #gameOver button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div id="gameArea">
         <div id="mouse"></div>
         <div id="score">Score: 0</div>
+        <div id="gameOver">
+            <h1>Game Over!</h1>
+            <button id="resetButton">Reiniciar Juego</button>
+        </div>
     </div>
     <script>
         $(document).ready(function () {
             const $mouse = $('#mouse');
             const $gameArea = $('#gameArea');
             const $score = $('#score');
+            const $gameOver = $('#gameOver');
+            const $resetButton = $('#resetButton');
             let score = 0;
             let speed = 5;
             let difficulty = 1;
+            let gameInterval;
+            let isGameOver = false;
 
             function createObstacle() {
+                if (isGameOver) return;
+
                 const $obstacle = $('<div class="obstacle"></div>');
                 const randomX = Math.random() * ($gameArea.width() - 50);
                 $obstacle.css({ top: 0, left: randomX });
                 $gameArea.append($obstacle);
 
                 const interval = setInterval(() => {
+                    if (isGameOver) {
+                        clearInterval(interval);
+                        $obstacle.remove();
+                        return;
+                    }
+
                     const currentTop = parseInt($obstacle.css('top'));
                     if (currentTop > $gameArea.height()) {
                         $obstacle.remove();
@@ -86,13 +119,35 @@
                         mouseRect.top < obstacleRect.bottom &&
                         mouseRect.bottom > obstacleRect.top
                     ) {
-                        alert('Game Over! Final Score: ' + score);
-                        location.reload();
+                        endGame();
                     }
                 }, 30);
             }
 
+            function endGame() {
+                isGameOver = true;
+                clearInterval(gameInterval);
+                $gameOver.show();
+            }
+
+            function resetGame() {
+                isGameOver = false;
+                score = 0;
+                speed = 5;
+                difficulty = 1;
+                $score.text(`Score: ${score}`);
+                $gameOver.hide();
+                $gameArea.find('.obstacle').remove();
+                startGame();
+            }
+
+            function startGame() {
+                gameInterval = setInterval(createObstacle, 2000 / difficulty);
+            }
+
             $(document).on('keydown', function (e) {
+                if (isGameOver) return;
+
                 const currentLeft = parseInt($mouse.css('left'));
                 if (e.key === 'ArrowLeft' && currentLeft > 0) {
                     $mouse.css('left', currentLeft - 20);
@@ -101,7 +156,9 @@
                 }
             });
 
-            setInterval(createObstacle, 2000 / difficulty);
+            $resetButton.on('click', resetGame);
+
+            startGame();
         });
     </script>
 </body>
